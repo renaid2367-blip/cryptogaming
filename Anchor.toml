@@ -1,0 +1,6 @@
+[programs.devnet]
+cryptogames = "target/deploy/cryptogames.so"
+
+[provider]
+cluster = "devnet"
+wallet = "~/.config/solana/id.json"

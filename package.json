@@ -1,0 +1,27 @@
+{
+  "name": "cryptogames-backend",
+  "version": "1.0.0",
+  "description": "Backend API for CryptoGames Solana dApp",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "body-parser": "^1.20.2",
+    "@solana/web3.js": "^1.91.0",
+    "@solana/spl-token": "^0.3.10",
+    "tweetnacl": "^1.0.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

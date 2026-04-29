@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard | CryptoGames</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="index.html" class="logo">← Back</a>
+        </div>
+        <div class="navbar-right">
+            <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+            <div id="userInfo" class="user-info hidden">
+                <span id="walletAddress" class="wallet-address"></span>
+                <span id="walletBalance" class="wallet-balance"></span>
+                <button id="disconnectBtn" class="btn btn-small">Disconnect</button>
+            </div>
+        </div>
+    </div>
+    <main class="container">
+        <h2>Leaderboard</h2>
+        <p>Top players based on balance and wins.</p>
+
+        <div class="leaderboard-card">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Place</th>
+                        <th>Player</th>
+                        <th>Balance</th>
+                        <th>Wins</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="js/wallet.js"></script>
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        const leaderboardBody = document.getElementById('leaderboardBody');
+
+        async function loadLeaderboard() {
+            const response = await fetch(`${API_BASE}/data/leaderboard`);
+            const data = await response.json();
+            leaderboardBody.innerHTML = '';
+
+            data.leaderboard.forEach((player, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${player.publicKey.slice(0, 6)}...${player.publicKey.slice(-4)}</td>
+                    <td>${player.balance.toFixed(4)} SOL</td>
+                    <td>${player.wins}</td>
+                `;
+                leaderboardBody.appendChild(row);
+            });
+        }
+
+        loadLeaderboard();
+    </script>
+</body>
+</html>

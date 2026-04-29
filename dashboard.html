@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | CryptoGames</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a href="index.html" class="logo">← Back</a>
+        </div>
+        <div class="navbar-right">
+            <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+            <div id="userInfo" class="user-info hidden">
+                <span id="walletAddress" class="wallet-address"></span>
+                <span id="walletBalance" class="wallet-balance"></span>
+                <button id="disconnectBtn" class="btn btn-small">Disconnect</button>
+            </div>
+        </div>
+    </div>
+    <main class="container">
+        <h2>Player Dashboard</h2>
+        <p>Deposit, withdraw, and review your game history.</p>
+
+        <div class="dashboard-grid">
+            <section class="dashboard-card">
+                <h3>💰 Send SOL Directly</h3>
+                <p style="color: #999; margin-bottom: 1rem;">Send SOL to this address to fund your account instantly</p>
+                <div id="receivingAddressContainer" class="receiving-address-box">
+                    <p id="receivingAddress" class="receiving-address">Loading...</p>
+                    <button id="copyAddressBtn" class="btn btn-small" style="margin-top: 0.5rem;">📋 Copy Address</button>
+                </div>
+                <div id="qrCodeContainer" style="text-align: center; margin-top: 1rem;">
+                    <img id="qrCode" src="" alt="QR Code" style="width: 150px; height: 150px; border-radius: 8px; background: white; padding: 8px;" />
+                </div>
+            </section>
+
+            <section class="dashboard-card">
+                <h3>Your Wallet</h3>
+                <p id="userWalletAddress" class="wallet-address-display">Not connected</p>
+                
+                <h3 style="margin-top: 1.5rem;">Account Balance</h3>
+                <p id="dashboardBalance" class="balance-display">0.0000 SOL</p>
+                
+                <div class="dashboard-actions">
+                    <label for="depositAmount">Deposit Amount (SOL)</label>
+                    <input id="depositAmount" type="number" min="0.001" step="0.001" placeholder="0.01" />
+                    <button id="depositBtn" class="btn btn-secondary">Deposit to Vault</button>
+                </div>
+                
+                <div class="dashboard-actions">
+                    <label for="withdrawAmount">Withdraw Amount (SOL)</label>
+                    <input id="withdrawAmount" type="number" min="0.001" step="0.001" placeholder="0.01" />
+                    <button id="withdrawBtn" class="btn btn-secondary">Withdraw</button>
+                </div>
+                
+                <div id="walletMessage" class="info hidden"></div>
+            </section>
+
+            <section class="dashboard-card">
+                <h3>Transaction History</h3>
+                <div id="recentActivity" class="activity-list"></div>
+            </section>
+
+            <section class="dashboard-card chat-card">
+                <h3>Live Chat</h3>
+                <div id="chatFeed" class="chat-feed"></div>
+                <div class="chat-input-row">
+                    <input id="chatMessage" type="text" placeholder="Send a message" />
+                    <button id="sendChat" class="btn btn-primary">Send</button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/wallet.js"></script>
+    <script>
+        const walletBtn = document.getElementById('walletBtn');
+        const depositBtn = document.getElementById('depositBtn');
+        const withdrawBtn = document.getElementById('withdrawBtn');
+        const dashboardBalance = document.getElementById('dashboardBalance');
+        const userWalletAddress = document.getElementById('userWalletAddress');
+        const walletMessage = document.getElementById('walletMessage');
+        const recentActivity = document.getElementById('recentActivity');
+        const chatFeed = document.getElementById('chatFeed');
+        const chatMessage = document.getElementById('chatMessage');
+        const sendChat = document.getElementById('sendChat');
+        const receivingAddress = document.getElementById('receivingAddress');
+        const copyAddressBtn = document.getElementById('copyAddressBtn');
+        const qrCode = document.getElementById('qrCode');
+
+        const API_BASE = '/api';
+
+        walletBtn.addEventListener('click', () => wallet.connect().then(() => {
+            loadWalletInfo();
+            fetchBalance();
+        }));
+        depositBtn.addEventListener('click', deposit);
+        withdrawBtn.addEventListener('click', withdraw);
+        sendChat.addEventListener('click', sendMessage);
+        copyAddressBtn.addEventListener('click', copyToClipboard);
+
+        async function loadMasterWallet() {
+            try {
+                const response = await fetch(`${API_BASE}/wallet/master-wallet`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Master wallet response:', data); // Debug log
+                
+                if (data.address) {
+                    receivingAddress.textContent = data.address;
+                    receivingAddress.title = 'Click to copy';
+                    
+                    // Generate QR code
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=solana:${data.address}`;
+                    qrCode.src = qrUrl;
+                } else if (data.masterWallet) {
+                    // Handle old response format for backwards compatibility
+                    receivingAddress.textContent = data.masterWallet;
+                    receivingAddress.title = 'Click to copy';
+                    
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=solana:${data.masterWallet}`;
+                    qrCode.src = qrUrl;
+                } else {
+                    throw new Error('No address in response: ' + JSON.stringify(data));
+                }
+            } catch (err) {
+                console.error('Error loading master wallet:', err);
+                receivingAddress.textContent = 'Error: ' + (err.message || 'Cannot load address');
+            }
+        }
+
+        function copyToClipboard() {
+            const address = receivingAddress.textContent;
+            if (address && address !== 'Loading...' && address !== 'Error loading address') {
+                navigator.clipboard.writeText(address).then(() => {
+                    const originalText = copyAddressBtn.textContent;
+                    copyAddressBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        copyAddressBtn.textContent = originalText;
+                    }, 2000);
+                });
+            }
+        }
+
+        async function loadWalletInfo() {
+            if (!wallet.isConnected || !wallet.publicKey) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/wallet/info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ publicKey: wallet.publicKey.toString() })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    userWalletAddress.textContent = `${data.address.slice(0, 8)}...${data.address.slice(-8)}`;
+                    userWalletAddress.title = data.address;
+                    loadTransactionHistory();
+                }
+            } catch (err) {
+                console.error('Error loading wallet info:', err);
+            }
+        }
+
+        async function loadTransactionHistory() {
+            if (!wallet.isConnected || !wallet.publicKey) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/wallet/history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ publicKey: wallet.publicKey.toString() })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    recentActivity.innerHTML = '';
+                    
+                    if (data.transactions.length === 0) {
+                        recentActivity.innerHTML = '<p style="color: #999;">No transactions yet</p>';
+                    } else {
+                        data.transactions.slice().reverse().forEach((tx) => {
+                            const item = document.createElement('div');
+                            item.className = 'activity-item';
+                            const date = new Date(tx.timestamp).toLocaleString();
+                            const status = tx.status === 'confirmed' ? '✓' : '⧗';
+                            item.innerHTML = `
+                                <strong>${status} ${tx.type.toUpperCase()}</strong><br>
+                                ${tx.amount.toFixed(4)} SOL<br>
+                                <small>${date}</small><br>
+                                ${tx.signature ? `<small style="color: #0f0;">TX: ${tx.signature.slice(0, 8)}...</small>` : ''}
+                            `;
+                            recentActivity.appendChild(item);
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading transaction history:', err);
+            }
+        }
+
+        async function fetchBalance() {
+            if (!wallet.isConnected) return;
+            const response = await fetch(`${API_BASE}/wallet/balance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicKey: wallet.publicKey.toString() })
+            });
+            const data = await response.json();
+            dashboardBalance.textContent = `${data.balance.toFixed(4)} SOL`;
+        }
+
+        async function deposit() {
+            if (!wallet.isConnected) return alert('Connect wallet first');
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            if (!amount || amount <= 0) return showMessage('Enter a valid deposit amount', true);
+
+            showMessage('Processing deposit...', false);
+            depositBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/wallet/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ publicKey: wallet.publicKey.toString(), amount })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`✓ Deposited ${amount} SOL - TX: ${data.signature.slice(0, 8)}...`, false);
+                    dashboardBalance.textContent = `${data.balance.toFixed(4)} SOL`;
+                    document.getElementById('depositAmount').value = '';
+                    loadWalletInfo();
+                } else {
+                    showMessage(data.error || 'Deposit failed', true);
+                }
+            } catch (err) {
+                showMessage(err.message || 'Deposit error', true);
+            }
+            depositBtn.disabled = false;
+        }
+
+        async function withdraw() {
+            if (!wallet.isConnected) return alert('Connect wallet first');
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            if (!amount || amount <= 0) return showMessage('Enter a valid withdrawal amount', true);
+
+            showMessage('Processing withdrawal...', false);
+            withdrawBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/wallet/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ publicKey: wallet.publicKey.toString(), amount })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showMessage(`✓ Withdrew ${amount} SOL`, false);
+                    dashboardBalance.textContent = `${data.balance.toFixed(4)} SOL`;
+                    document.getElementById('withdrawAmount').value = '';
+                    loadWalletInfo();
+                } else {
+                    showMessage(data.error || 'Withdrawal failed', true);
+                }
+            } catch (err) {
+                showMessage(err.message || 'Withdrawal error', true);
+            }
+            withdrawBtn.disabled = false;
+        }
+
+        function showMessage(message, isError) {
+            walletMessage.textContent = message;
+            walletMessage.className = isError ? 'error' : 'success';
+            walletMessage.classList.remove('hidden');
+            setTimeout(() => walletMessage.classList.add('hidden'), 5000);
+        }
+
+        async function sendMessage() {
+            if (!wallet.isConnected) return alert('Connect wallet first');
+            const text = chatMessage.value.trim();
+            if (!text) return;
+
+            await fetch(`${API_BASE}/chat/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicKey: wallet.publicKey.toString(), message: text })
+            });
+
+            chatMessage.value = '';
+            loadChat();
+        }
+
+        async function loadChat() {
+            const response = await fetch(`${API_BASE}/chat/messages`);
+            const data = await response.json();
+            chatFeed.innerHTML = '';
+            data.messages.forEach((msg) => {
+                const item = document.createElement('div');
+                item.className = 'chat-item';
+                item.innerHTML = `<strong>${msg.publicKey.slice(0, 6)}...</strong>: ${msg.message}`;
+                chatFeed.appendChild(item);
+            });
+        }
+
+        // Load initial data
+        loadMasterWallet();
+        if (wallet.isConnected) {
+            loadWalletInfo();
+            fetchBalance();
+        }
+        loadChat();
+    </script>
+</body>
+</html>

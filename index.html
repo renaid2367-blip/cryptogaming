@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoGames - Solana Gaming dApp</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <h1 class="logo">🎰 CryptoGames</h1>
+        </div>
+        <div class="navbar-right">
+            <button id="walletBtn" class="btn btn-primary">Connect Wallet</button>
+            <div id="userInfo" class="user-info hidden">
+                <span id="walletAddress" class="wallet-address"></span>
+                <span id="walletBalance" class="wallet-balance"></span>
+                <button id="disconnectBtn" class="btn btn-small">Disconnect</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero">
+        <h2>Play, Win, Earn on Solana</h2>
+        <p>0% House Edge • Instant Payouts • Fair & Transparent</p>
+    </div>
+
+    <div class="container">
+        <div class="games-grid">
+            <div class="game-card">
+                <div class="game-icon">🎲</div>
+                <h3>Dice Game</h3>
+                <p>Roll the dice and predict the outcome</p>
+                <a href="games/dice.html" class="btn btn-game">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <div class="game-icon">📈</div>
+                <h3>Crash Game</h3>
+                <p>Cash out before the multiplier crashes</p>
+                <a href="games/crash.html" class="btn btn-game">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <div class="game-icon">🎰</div>
+                <h3>Slots</h3>
+                <p>Spin the reels for big wins</p>
+                <a href="games/slots.html" class="btn btn-game">Play Now</a>
+            </div>
+
+            <div class="game-card">
+                <div class="game-icon">🪙</div>
+                <h3>Coin Flip</h3>
+                <p>50/50 chance to double your bet</p>
+                <a href="games/flip.html" class="btn btn-game">Play Now</a>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <div class="feature">
+                <h3>⚡ Instant Transactions</h3>
+                <p>Play and win on the Solana blockchain with lightning-fast confirmation times</p>
+            </div>
+            <div class="feature">
+                <h3>🔐 Secure Wallet</h3>
+                <p>Connect with Phantom wallet. Your funds always under your control</p>
+            </div>
+            <div class="feature">
+                <h3>📊 Fair Gaming</h3>
+                <p>0% house edge by default. All game outcomes verifiable on-chain</p>
+            </div>
+            <div class="feature">
+                <h3>🎯 Transparent</h3>
+                <p>No hidden fees. Every transaction recorded on the blockchain</p>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="dashboard.html" class="btn btn-secondary">View Dashboard</a>
+            <a href="leaderboard.html" class="btn btn-secondary">View Leaderboard</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 CryptoGames. All rights reserved. | <a href="#">Responsible Gaming</a> | <a href="#">Terms</a></p>
+    </footer>
+
+    <script src="js/wallet.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
